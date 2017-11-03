@@ -1,12 +1,13 @@
 version: '2.1'
 
 services:
+
   users-db:
     container_name: users-db
     build:
       context: ../flask-microservices-users/project/db
     ports:
-        - 5435:5432  # expose ports - HOST:CONTAINER
+      - 5435:5432  # expose ports - HOST:CONTAINER
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -17,6 +18,9 @@ services:
     container_name: users-service
     build:
       context: ../flask-microservices-users
+      dockerfile: Dockerfile-local
+    volumes:
+      - '../flask-microservices-users:/usr/src/app'
     ports:
       - 5001:5000 # expose ports - HOST:CONTAINER
     environment:
@@ -49,11 +53,15 @@ services:
     container_name: web-service
     build:
       context: ../flask-microservices-client
-      args:
-        - NODE_ENV=development
-        - REACT_APP_USERS_SERVICE_URL=${REACT_APP_USERS_SERVICE_URL}
+      dockerfile: Dockerfile-local
+    volumes:
+      - '../flask-microservices-client:/usr/src/app'
+      - '/usr/src/app/node_modules'
     ports:
       - '9000:9000' # expose ports - HOST:CONTAINER
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_USERS_SERVICE_URL=${REACT_APP_USERS_SERVICE_URL}
     depends_on:
       users-service:
         condition: service_started
@@ -61,13 +69,13 @@ services:
       - users-service
 
   swagger:
-      container_name: swagger
-      build:
-        context: ../flask-microservices-swagger
-      ports:
-        - '8080:8080' # expose ports - HOST:CONTAINER
-      environment:
-        - API_URL=https://raw.githubusercontent.com/cicyzeng/flask-microservices-swagger/master/swagger.json
-      depends_on:
-        users-service:
-          condition: service_started
+    container_name: swagger
+    build:
+      context: ../flask-microservices-swagger
+    ports:
+      - '8080:8080' # expose ports - HOST:CONTAINER
+    environment:
+      - API_URL=https://raw.githubusercontent.com/cicyzeng/flask-microservices-swagger/master/swagger.json
+    depends_on:
+      users-service:
+        condition: service_started
